@@ -64,26 +64,29 @@ start(Args) ->
     MainMap = maps:from_list(PlayerInfo),
     io:fwrite("Main Map: ~p~n", [MainMap]),
 
+
     EligiblePlayersMap = create_eligible_players_map(MainMap, MainMap),
     lists:foreach(
         fun({Name, Credits}) ->
             Pid = spawn(player, player_listener, [Name, Credits, maps:get(Name, EligiblePlayersMap), MainMap, self()]),
             register(Name, Pid),
-            Worker_pid = whereis(Name),
-            io:format("Worker PID for ~p: ~p~n", [Name, Worker_pid])
+            Worker_pid = whereis(Name)
+            % io:format("Worker PID for ~p: ~p~n", [Name, Worker_pid])
         end,
         PlayerInfo
     ),
-    
+    % io:fwrite("Main Map: ~p~n", [EligiblePlayersMap]),
+
     lists:foreach(
         fun(Name) ->
-            io:fwrite("Current Player: ~p~n", [Name]),
+            % io:fwrite("Current Player: ~p~n", [Name]),
             Initiate = "Initiate",
             Current = whereis(Name),
             Current ! {message, {Name, Initiate}}
         end,
         maps:keys(MainMap)
     ).
+
 
 create_eligible_players_map(MainMap, EligiblePlayersMap) ->
     lists:foldl(
