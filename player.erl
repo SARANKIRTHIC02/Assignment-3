@@ -25,7 +25,7 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
         
         {accept, {Player1Name}} -> 
-            io:fwrite("~p The Random PLayer sent~n", [Player1Name]),
+            % io:fwrite("~p The Random PLayer sent~n", [Player1Name]),
 
             NameValue = maps:get(Name, MainMap),
             if 
@@ -48,9 +48,17 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
                     io:format("Invalid player or MainMap value~n")
             end,
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
-        
+
+        {choose_move, {Game_id, PlayerName}} ->
+            Move = rand:uniform(3),
+            io:format("Reached The Choose Move ~n"),
+            MasterId ! {player_response, {Game_id, Move, PlayerName}},
+            io:format("Move Sent To Master ~n"),
+
+            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId);
+    
         _ ->
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId)
-    end.
 
+    end.
 
