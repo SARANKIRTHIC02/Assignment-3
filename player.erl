@@ -14,7 +14,7 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
         
         {request_to_play, Name} ->
-            io:format("~s REQUEST TO PLAY~n", [Name]),
+            % io:format("~s REQUEST TO PLAY~n", [Name]),
             Random_Ind = rand:uniform(length(EligiblePlayers)),
             Player2 = lists:nth(Random_Ind, EligiblePlayers),
             % io:fwrite("~p Current Name~n", [Name]),
@@ -36,29 +36,33 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             end,
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
 
-
+            % Send back to Player 1
         {message_player_2, Player2Name} ->
-            io:fwrite("Inside message player 2\n"),
+            % io:fwrite("Inside message player 2\n"),
             RandomValue = maps:get(Name, MainMap),
             if
                 RandomValue > 0 ->
                     MasterId ! {create_game,Name,Player2Name},
-                    io:format("PLayer 2 Value greater than 0\n");
+                    io:format("~p Name ~p Random Player inside Create~n", [Name, Player2Name]);
+
                 true ->
                     io:format("Invalid player or MainMap value~n")
             end,
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
 
-        {choose_move, {Game_id, PlayerName}} ->
+        {choose_move, {Temp_id, PlayerName}} ->
             Move = rand:uniform(3),
-            io:format("Reached The Choose Move ~n"),
-            MasterId ! {player_response, {Game_id, Move, PlayerName}},
-            io:format("Move Sent To Master ~n"),
+            % io:format("Reached The Choose Move ~n"),
+            MasterId ! {player_response, {Temp_id, Move, PlayerName}},
+            io:format("Move Sent To Master ~p ~n",[Move]),
 
-            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId);
+            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId)
+        
     
-        _ ->
-            player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId)
+        % _->
+        %     player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId)
 
-    end.
+
+        
+        end.
 
