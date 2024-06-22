@@ -25,6 +25,7 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
         
         {accept, {Player1Name}} -> 
+
             % io:fwrite("~p The Random PLayer sent~n", [Player1Name]),
 
             NameValue = maps:get(Name, MainMap),
@@ -32,7 +33,8 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
                 NameValue > 0 ->
                     whereis(Player1Name)! {message_player_2, Name};
                 true ->
-                    io:format("Invalid player or MainMap value~n")  
+                    % io:format("Invalid player or MainMap value~n") 
+                    ok 
             end,
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
 
@@ -42,11 +44,12 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             RandomValue = maps:get(Name, MainMap),
             if
                 RandomValue > 0 ->
-                    MasterId ! {create_game,Name,Player2Name},
-                    io:format("~p Name ~p Random Player inside Create~n", [Name, Player2Name]);
+                    MasterId ! {create_game,Name,Player2Name};
+                    % io:format("~p Name ~p Random Player inside Create~n", [Name, Player2Name]);
 
                 true ->
-                    io:format("Invalid player or MainMap value~n")
+                    % io:format("Invalid player or MainMap value~n")
+                    ok
             end,
             player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId);
 
@@ -54,13 +57,18 @@ player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId) ->
             Move = rand:uniform(3),
             % io:format("Reached The Choose Move ~n"),
             MasterId ! {player_response, {Temp_id, Move, PlayerName}},
-            io:format("Move Sent To Master ~p ~n",[Move]),
+            % io:format("Move Sent To Master ~p ~n",[Move]),
 
-            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId)
+            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId);
         
     
         % _->
         %     player_listener(Name,Credits, EligiblePlayers, MainMap,MasterId)
+        
+        {disqualify_player , PlayerNameDisqualify} ->
+            io:format("~p ~n",[Credits-1]),
+            
+            player_listener(Name, Credits, EligiblePlayers, MainMap, MasterId)
 
 
         
