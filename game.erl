@@ -8,8 +8,12 @@ start(Args) ->
 
     MainMap = maps:from_list(PlayerInfo),
     % io:fwrite("Main Map: ~p~n", [MainMap]),
-    io:format("Starting Game Log...~n ~n"),
+    io:format("\n"),
+    io:format("** Rock, Paper Scissors World Championship ** ~n"),
+    io:format("~n"),
 
+    io:format("Starting Game Log...~n ~n"),
+    DuplicateMainMap = MainMap,
     EligiblePlayersMap = create_eligible_players_map(MainMap, MainMap),
     lists:foreach(
         fun({Name, Credits}) ->
@@ -19,17 +23,26 @@ start(Args) ->
         end,
         PlayerInfo
     ),
+    
 
+    % PlayersAdditionMap = lists:foldl(
+    %     fun({Name, Credits}, Acc) ->
+    %         maps:put(Name, {0, Credits}, Acc)
+    %     end,
+    %     #{},
+    %     PlayerInfo),
+        % io:format("~p PlayersAdd ~n",[PlayersAdditionMap]),
     lists:foreach(
         fun(Name) ->
-            % io:fwrite("Current Player: ~p~n", [Name]),,
+            % io:fwrite("Current Player: ~p~n", [Name])
             Current = whereis(Name),
             Current ! {message, {Name, initiate}}
         end,
         maps:keys(MainMap)
     ),
     timer:sleep(200),
-    master_listener(MainMap, EligiblePlayersMap, 1, #{}, #{}, #{}, #{},false).
+    master_listener(MainMap, EligiblePlayersMap, 1, #{}, #{}, #{}, #{},DuplicateMainMap).
+    
 
 create_eligible_players_map(MainMap, EligiblePlayersMap) ->
     lists:foldl(
@@ -42,7 +55,7 @@ create_eligible_players_map(MainMap, EligiblePlayersMap) ->
     )
 .
 
-master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, Player_One_Map, Player_Two_Map, Player_Details_Map,Declared) ->
+master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, Player_One_Map, Player_Two_Map, Player_Details_Map,DuplicateMap) ->
     receive
         {create_game, Name, Player2Name} ->
             New_gameId = Game_id + 1,
@@ -52,14 +65,9 @@ master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, Player_One_Ma
             whereis(Player2Name) ! {choose_move, {Temp_id, Player2Name}}, 
             UpdatedPlayersMap = maps:put(Temp_id, [Name, Player2Name], Players_Map),
             io:format("+ [~p] new game for ~p -> ~p ~n", [Temp_id,Name,Player2Name]),
-            % io:format("Updated Players Map: ~p~n", [UpdatedPlayersMap]),
-            master_listener(MainMap, EligiblePlayersMap, New_gameId, UpdatedPlayersMap, Player_One_Map, Player_Two_Map, Player_Details_Map,Declared);
+            master_listener(MainMap, EligiblePlayersMap, New_gameId, UpdatedPlayersMap, Player_One_Map, Player_Two_Map, Player_Details_Map,DuplicateMap);
 
     {player_response, {GameId, Move, PlayerName}} ->
-        io:format("~p sssssssssssssssssssssssss ~n",[GameId]),
-        % io:format("~p sssssssssssssssssssssssss ~n",[Players_Map]),
-        io:format("~p sssssssssssssssssssssssss ~n",[PlayerName]),
-
     Players_List = maps:get(GameId, Players_Map),
     UpdatedPlayerOneMap = case {hd(Players_List), PlayerName} of
         {PlayerName, _} ->
@@ -77,19 +85,11 @@ master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, Player_One_Ma
         _ ->
             Player_Two_Map
     end,
-
-    % io:format("~p playerones ~n",[UpdatedPlayerOneMap]),
-    % io:format("~p playertrwo ~n",[UpdatedPlayerTwoMap]),
-
+    
     PlayerOneRematch = hd(Players_List),
     PlayerTwoRematch =  lists:last(Players_List),
-    % io:format("~p ~n",[PlayerOneRematch]),
-    % io:format("~p ~n",[PlayerTwoRematch]),
     PlayerOneMoves = maps:get(GameId, UpdatedPlayerOneMap, []),
-    % io:format("Player One Moves: ~p~n", [PlayerOneMoves]),
-    % Get the list of moves for Player Two
     PlayerTwoMoves = maps:get(GameId, UpdatedPlayerTwoMap, []),
-    % io:format("Player Two Moves: ~p~n", [PlayerTwoMoves]),
     
     if 
         length(PlayerOneMoves) == length(PlayerTwoMoves) ->
@@ -101,70 +101,192 @@ master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, Player_One_Ma
                 % io:format("~p ~n",[MainMap]),
                 Current_Player_Two_Credits = maps:get(PlayerTwoRematch,MainMap)-1,
                 Temp_Map = maps:put(PlayerTwoRematch,Current_Player_Two_Credits,MainMap),
-                io:format("~p ~n player@Creditssssssss ~p",[Current_Player_Two_Credits,PlayerTwoRematch]),
+                % List_Of_Addition = maps:get(PlayerTwoRematch,DuplicateMap),
+            
+                % UpdatedUsedCredits = element(1,List_Of_Addition)+1,
+                % UpdatedRemainingCredits = element(2,List_Of_Addition)-1,
+                % UpdatedPlayerMapAddition = maps:put(PlayerOneRematch, {UpdatedUsedCredits, UpdatedRemainingCredits}, DuplicateMap),
+                % io:format("~p player@Creditssssssss ~n",[UpdatedPlayerMapAddition]),
+                 if 
+                    OneLastMove == 1 ->
+                        OneLastMovePrintOne = rock;
+                    OneLastMove == 2 ->
+                        OneLastMovePrintOne = paper;
+                    OneLastMove == 3 ->
+                        OneLastMovePrintOne = scissors;
+                    true ->
+                        OneLastMovePrintOne = OneLastMove
+                end,
 
-                io:format("$ (~p) ~p:~p -> ~p:~p = ~p loses [~p credits left]~n",[GameId,PlayerOneRematch,OneLastMove,PlayerTwoRematch,TwoLastMove,PlayerTwoRematch,Current_Player_Two_Credits]),
-                % io:format("~p ~n",[Current_Player_Two_Credits]),
-                % io:format("~p ~n",[Temp_Map]),
-
+                if 
+                    TwoLastMove == 1 ->
+                        TwoLastMovePrintOne = rock;
+                    TwoLastMove == 2 ->
+                        TwoLastMovePrintOne = paper;
+                    TwoLastMove == 3 ->
+                        TwoLastMovePrintOne = scissors;
+                    true ->
+                        TwoLastMovePrintOne = TwoLastMove
+                end,
+        
+                io:format("$ (~p) ~p:~p -> ~p:~p = ~p loses [~p credits left]~n",[GameId,PlayerOneRematch,OneLastMovePrintOne,PlayerTwoRematch,TwoLastMovePrintOne,PlayerTwoRematch,Current_Player_Two_Credits]),
                 if 
                    Current_Player_Two_Credits ==0 ->
                    whereis(PlayerTwoRematch) ! {disqualify_player, PlayerTwoRematch},
-                %    io:format("ascddvfevdfvsfbgbfgdbgbbgldvcnf ~p ~n",[Temp_Map]),
+                   io:format("- Player Disqualified : ~p ~n",[PlayerTwoRematch]),
                    FilteredMap = maps:filter(fun(_Key, Value) -> Value > 0 end, Temp_Map),
-                %    io:foxrmat(" asdfnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn~p ~n",[FilteredMap]),
-                    Size = maps:size(FilteredMap),
-                    % io:format(" ~p Size ~n",[Size]),
+                   Size = maps:size(FilteredMap),
+
                    if 
                         Size == 1 ->
-                            io:format("We have a Winner --------------------------------------~p ~n",[FilteredMap]);
+                            ResultMapOne = maps:fold(
+                                    fun(Key, Value, Acc) ->
+                                        case maps:is_key(Key, Acc) of
+                                            true ->
+                                                NewValue = maps:get(Key, Acc) - Value,
+                                                maps:put(Key, NewValue, Acc);
+                                            false ->
+                                                maps:put(Key, -Value, Acc)
+                                        end
+                                    end,
+                                    DuplicateMap,
+                                     Temp_Map
+                                ),
+                            io:format("\nWe have a Winner...~n"),
+                            io:format("** Tournament Report ** ~n"),
+                            io:format("~n"),
+                            io:format("Players: ~n"),  
+                            io:format("~n"),
+                            % io:format("~p ~n",[ResultMapOne]),
+                            % io:format("~p ~n",[Temp_Map]),
+                            % io:format("~p ~n",[DuplicateMap]),
+                            OneKeys = maps:keys(ResultMapOne),
+                            lists:foreach(
+                                fun(Key) ->
+                                    CreditsUsed = maps:get(Key, ResultMapOne),
+                                    CreditsRemaining = maps:get(Key, Temp_Map),
+                                    io:format("~s: credits used: ~p, credits remaining: ~p~n", [Key, CreditsUsed, CreditsRemaining])
+                                end,
+                                OneKeys
+                                ),
+                                io:format("\n"),
+                            io:format("Total Games:~p ~n \n",[GameId]),
+                            io:format("Winner ~p ~n \n",[maps:keys(FilteredMap)]),
+                            io:format("See You Next Year... \n ~n");
                         true->
-                            master_listener(Temp_Map, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,Declared)
+                            master_listener(Temp_Map, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)
                     end;
                    
                    true ->
-                        master_listener(Temp_Map, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,Declared)
+                        master_listener(Temp_Map, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)
 
                 end;
 
                 (OneLastMove == 3 andalso TwoLastMove == 1) orelse (OneLastMove == 2 andalso TwoLastMove == 3) orelse (OneLastMove == 1 andalso TwoLastMove == 2) ->  
-                % io:format("PLayer 2 Wins ~p ~n",[PlayerTwoRematch]),
-                io:format("~p ~n",[MainMap]),
                 Current_Player_One_Credits = maps:get(PlayerOneRematch,MainMap)-1,
                 Temp_Map_Two = maps:put(PlayerOneRematch,Current_Player_One_Credits,MainMap),
-                                io:format("PLayer Lost ~p ~n",[Current_Player_One_Credits]),
-                % io:format("~p ~n",[Current_Player_One_Credits]),
-                io:format("$ (~p) ~p:~p -> ~p:~p = ~p loses [~p credits left]~n",[GameId,PlayerTwoRematch,TwoLastMove,PlayerOneRematch,OneLastMove,PlayerOneRematch,Current_Player_One_Credits]),
-                % io:format("~p ~n",[Temp_Map_Two]),
+
+                % List_Of_Addition_Two = maps:get(PlayerOneRematch,DuplicateMap),
+                % UpdatedUsedCreditsTwo = element(1,List_Of_Addition_Two)+1,
+                % UpdatedRemainingCreditsTwo = element(2,List_Of_Addition_Two)-1,
+                % UpdatedPlayerMapAdditionTwo = maps:put(PlayerTwoRematch, {UpdatedUsedCreditsTwo, UpdatedRemainingCreditsTwo}, DuplicateMap),
+                % io:format("~p player@Creditssssssss ~n",[UpdatedPlayerMapAdditionTwo]),
+                if 
+                    OneLastMove == 1 ->
+                        OneLastMovePrint = rock;
+                    OneLastMove == 2 ->
+                        OneLastMovePrint = paper;
+                    OneLastMove == 3 ->
+                        OneLastMovePrint = scissors;
+                    true ->
+                        OneLastMovePrint = OneLastMove
+                end,
+                if 
+                    TwoLastMove == 1 ->
+                        TwoLastMovePrint = rock;
+                    TwoLastMove == 2 ->
+                        TwoLastMovePrint = paper;
+                    TwoLastMove == 3 ->
+                        TwoLastMovePrint = scissors;
+                    true ->
+                        TwoLastMovePrint = TwoLastMove
+                end,
+
+                io:format("$ (~p) ~p:~p -> ~p:~p = ~p loses [~p credits left]~n",[GameId,PlayerTwoRematch,TwoLastMovePrint,PlayerOneRematch,OneLastMovePrint,PlayerOneRematch,Current_Player_One_Credits]),
 
                 if 
                    Current_Player_One_Credits ==0 ->
                         whereis(PlayerOneRematch) ! {disqualify_player, PlayerOneRematch},
+                                
+                        io:format("- Player Disqualified : ~p ~n",[PlayerOneRematch]),
                         Filtered_Map_Two = maps:filter(fun(_Key, Value) -> Value > 0 end, Temp_Map_Two),
                         Size_Two = maps:size(Filtered_Map_Two),
-                %    io:format(" ~p Size ~n",[Size_Two]),
                         if 
                             Size_Two == 1 ->
-                                io:format("We have a Winner  222222222222222222222222222--------------------------------------~p ~n",[Filtered_Map_Two]);
+                                 ResultMap = maps:fold(
+                                    fun(Key, Value, Acc) ->
+                                        case maps:is_key(Key, Acc) of
+                                            true ->
+                                                NewValue = maps:get(Key, Acc) - Value,
+                                                maps:put(Key, NewValue, Acc);
+                                            false ->
+                                                maps:put(Key, -Value, Acc)
+                                        end
+                                    end,
+                                    DuplicateMap,
+                                      Temp_Map_Two
+                                ),
+                                Keys = maps:keys(ResultMap),
+                                io:format("~n"),
+                                io:format(" We have a Winner...~n"),
+                                io:format("** Tournament Report ** ~n"),
+                                io:format("\n"),
+                                io:format("Players: ~n"),
+                                io:format("~n"),
+                                % io:format("~p ~n",[Temp_Map_Two]),
+                                % io:format("~p ~n",[DuplicateMap]),
+                                    % io:format("~p~n", [ResultMap]),
+                                    % io:format("~p~n", [Temp_Map_Two]),
+                                lists:foreach(
+                                fun(Key) ->
+                                    CreditsUsed = maps:get(Key, ResultMap),
+                                    CreditsRemaining = maps:get(Key, Temp_Map_Two),
+                                    io:format("~s: credits used: ~p, credits remaining: ~p~n", [Key, CreditsUsed, CreditsRemaining])
+                                end,
+                                Keys
+                                ),
+                                % io:format("~p~n", [DuplicateMap]),                                
+                                io:format("\n Total Games:~p ~n \n",[GameId]),
+                                io:format("Winner ~p ~n \n",[maps:keys(Filtered_Map_Two)]),
+                                io:format("See You Next Year... \n ~n");
 
                             true->
-                                master_listener(Temp_Map_Two, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,true)
+                                master_listener(Temp_Map_Two, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)
                         end;
-
-
                    true ->
-                    master_listener(Temp_Map_Two, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,true)
+                    master_listener(Temp_Map_Two, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)
                 end;
             
-                (OneLastMove == 1 andalso TwoLastMove == 1) orelse (OneLastMove == 2 andalso TwoLastMove == 2) orelse (OneLastMove == 3 andalso TwoLastMove == 3) ->  
-                    io:format(" {~p} Game Draw ~n",[GameId]),
+                (OneLastMove == 1 andalso TwoLastMove == 1) orelse (OneLastMove == 2 andalso TwoLastMove == 2) orelse (OneLastMove == 3 andalso TwoLastMove == 3) -> 
+                     if 
+                    OneLastMove == 1 ->
+                        OneLastMovePrintTwo = rock;
+                    OneLastMove == 2 ->
+                        OneLastMovePrintTwo = paper;
+                    OneLastMove == 3 ->
+                        OneLastMovePrintTwo = scissors;
+                    true ->
+                        OneLastMovePrintTwo = OneLastMove
+                end,
+ 
+                    io:format("* {~p} Game Draw, Players chose -> ~p ~n",[GameId,OneLastMovePrintTwo]),
                     whereis(PlayerOneRematch) ! {choose_move, {GameId,PlayerOneRematch }},
                     whereis(PlayerTwoRematch) ! {choose_move, {GameId,PlayerTwoRematch}},
-                    master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,true);
+                    master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap);
                 true ->
-                    master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,true)
+                    master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)
             end;   
         true ->
-            master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,true)  
+            master_listener(MainMap, EligiblePlayersMap, Game_id, Players_Map, UpdatedPlayerOneMap, UpdatedPlayerTwoMap, Player_Details_Map,DuplicateMap)  
     end
 end.

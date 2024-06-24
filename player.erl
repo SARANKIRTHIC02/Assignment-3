@@ -15,7 +15,8 @@ player_listener(Name, Credits, EligiblePlayers,EligiblePlayersMap, MainMap, Mast
             Random_Ind = rand:uniform(length(EligiblePlayers)),
             Player2 = lists:nth(Random_Ind, EligiblePlayers),
             whereis(Player2) ! {accept, {Name}},
-            timer:send_after(100, self(),  {request_to_play, Name});
+            Random_Time_To_Start = 10+rand:uniform(100-10+1)-1,
+            timer:send_after(Random_Time_To_Start, self(),  {request_to_play, Name});
             true ->
                 ok
 
@@ -58,7 +59,7 @@ player_listener(Name, Credits, EligiblePlayers,EligiblePlayersMap, MainMap, Mast
             player_listener(Name, Credits, EligiblePlayers,EligiblePlayersMap ,MainMap, MasterId);
 
         {disqualify_player, PlayerNameDisqualify} ->
-            % io:format(" xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ~p ~n",[PlayerNameDisqualify]),
+            % io:format("- Player Disqualified : ~p ~n",[PlayerNameDisqualify]),
             Edited_Main_Map = maps:put(PlayerNameDisqualify,0,MainMap),
             player_listener(Name, Credits, EligiblePlayers,EligiblePlayersMap ,Edited_Main_Map, MasterId)
     end.
